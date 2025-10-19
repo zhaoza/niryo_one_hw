@@ -1,0 +1,166 @@
+<launch>
+  <!-- ===== knobs (defaults = FULL experience) ===== -->
+  <arg name="hardware_version" default="one"/>   <!-- one | ned | ned2 -->
+  <arg name="use_gripper"      default="false"/> <!-- use alt MoveIt config with gripper -->
+  <arg name="start_app_nodes"  default="true"/>  <!-- arm/tools/status/poses/programs/ui -->
+  <arg name="start_vision"     default="false"/> <!-- vision off by default (extra deps) -->
+  <arg name="start_rosbridge"  default="false"/>  <!-- JSON-over-WebSocket -->
+  <arg name="start_rviz"       default="false"/>
+  <arg name="start_foxglove"   default="false"/>
+  <arg name="log_level"        default="INFO"/>
+  <arg name="simu_gripper"     default="false"/>
+  <arg name="gazebo"           default="false"/>
+  <arg name="simulation_mode"  default="false"/>
+
+  
+
+  <!-- ===== 1) URDF + SRDF ===== -->
+  <group unless="$(arg use_gripper)">
+    <include file="$(find niryo_moveit_config_standalone)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+      <arg name="hardware_version"       value="$(arg hardware_version)"/>
+    </include>
+  </group>
+  <group if="$(arg use_gripper)">
+    <include file="$(find niryo_moveit_config_w_gripper1)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+      <arg name="hardware_version"       value="$(arg hardware_version)"/>
+    </include>
+  </group>
+
+  <!-- ===== 2) Robot State Publisher ===== -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher"
+        name="robot_state_publisher" ns="/niryo_robot" output="screen"/>
+
+  <!-- ===== 3) HW params + node + controller spawner (your file) ===== -->
+  <include file="$(find niryo_one_hw))/launch/hw_params_and_node.launch"/>
+
+  <!-- ===== 4) MoveIt controller mapping ===== -->
+  <rosparam command="load" ns="/move_group"
+            file="$(find niryo_one_hw)/config/moveit_controllers.yaml"/>
+
+  <!-- Remap legacy Niryo action name -> your ros_control action -->
+  <group>
+    <remap from="/niryo_robot_follow_joint_trajectory_controller/follow_joint_trajectory"
+           to="/niryo_robot/arm_controller/follow_joint_trajectory"/>
+
+    <!-- ===== 5) MoveIt (after controllers are up) ===== -->
+    <group unless="$(arg use_gripper)">
+      <include file="$(find niryo_moveit_config_standalone)/launch/move_group.launch">
+        <arg name="allow_trajectory_execution" value="true"/>
+        <arg name="publish_monitored_planning_scene" value="true"/>
+        <arg name="hardware_version" value="$(arg hardware_version)"/>
+      </include>
+    </group>
+    <group if="$(arg use_gripper)">
+      <include file="$(find niryo_moveit_config_w_gripper1)/launch/move_group.launch">
+        <arg name="allow_trajectory_execution" value="true"/>
+        <arg name="publish_monitored_planning_scene" value="true"/>
+        <arg name="hardware_version" value="$(arg hardware_version)"/>
+      </include>
+    </group>
+  </group>
+
+    <!-- Tools commander (disable if no tool HW; many branches support a sim flag) -->
+    <include file="$(find niryo_robot_tools_commander)/launch/tools_commander.launch">
+        <arg name="log_level" value="$(arg log_level)"/>
+        <arg name="hardware_version" value="$(arg hardware_version)"/>
+        <arg name="simu_gripper" value="$(arg simu_gripper)"/>
+        <arg name="gazebo" value="$(arg gazebo)"/>
+    </include>
+
+  <!-- ===== 6) Application layer ===== -->
+  <group if="$(arg start_app_nodes)" ns="/niryo_robot">
+    <!-- Arm commander -->
+    <node pkg="niryo_robot_arm_commander" type="robot_commander_node.py"
+          name="niryo_robot_arm_commander" output="screen" respawn="true">
+      <param name="hardware_version" value="$(arg hardware_version)"/>
+    </node>
+
+    <!-- 
+        Tools commander (disable if no tool HW; many branches support a sim flag) 
+    <node pkg="niryo_robot_tools_commander" type="tools_commander.py"
+          name="niryo_robot_tools_commander" output="screen" respawn="true">
+      <param name="simulation_mode" value="true"/>
+    </node>-->
+
+    <!-- Status publisher -->
+    <!--
+    <node pkg="niryo_robot_status" type="status.py"
+          name="niryo_robot_status" output="screen" respawn="true"/>
+          -->
+
+    <!-- Poses handlers -->
+    <node pkg="niryo_robot_poses_handlers" type="poses_handlers.py"
+          name="niryo_robot_poses_handlers" output="screen" respawn="true"/>
+
+    <!-- Programs manager (v1 or v2 depending on your repo; uncomment the one you have) -->
+    
+    <node pkg="niryo_robot_programs_manager" type="programs_manager.py"
+          name="niryo_robot_programs_manager" output="screen" respawn="true"/>
+    
+    <node pkg="niryo_robot_programs_manager_v2" type="programs_manager_node.py"
+          name="niryo_robot_programs_manager_v2" output="screen" respawn="true"/>
+    
+
+    <!-- User interface node -->
+
+    <!--
+    <node pkg="niryo_robot_user_interface" type="user_interface_node.py"
+          name="niryo_robot_user_interface" output="screen" respawn="true"/>
+          -->
+    <!-- 
+        Start the JSON-over-TCP server used by pyniryo 
+    <node pkg="niryo_robot_user_interface"       type="user_interface_node.py"          
+      name="niryo_robot_user_interface"      ns="/niryo_robot"
+      output="screen" respawn="true">
+
+    
+    <param name="ip_address" value="0.0.0.0"/>
+    <param name="tcp_port"   value="40001"/>
+
+  
+    </node> -->
+
+  </group>
+
+    <!-- User interface node including TCP_server? -->
+
+    <include file="$(find niryo_robot_user_interface)/launch/user_interface.launch">
+        <arg name="log_level" value="$(arg log_level)"/>
+    </include>
+    
+    <include file="$(find niryo_robot_status)/launch/robot_status.launch">
+            <arg name="simulation_mode" value="$(arg simulation_mode)"/>
+    </include>
+  <!-- Vision (optional; needs extra deps) -->
+  <group if="$(arg start_vision)" ns="/niryo_robot">
+    <node pkg="niryo_robot_vision" type="vision_node.py"
+          name="niryo_robot_vision" output="screen" respawn="true"/>
+  </group>
+
+  <!-- ===== 7) Remote access: rosbridge / tf2_web_republisher ===== -->
+<group if="$(arg start_rosbridge)">
+  <!-- rosbridge_websocket already launches rosapi; don't add another -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+    <arg name="address" value="0.0.0.0"/>
+    <arg name="port" value="9090"/>
+  </include>
+
+  <!-- tf2_web_republisher is separate; keep if you need TF over the web -->
+  <node pkg="tf2_web_republisher" type="tf2_web_republisher"
+        name="tf2_web_republisher" output="screen"/>
+</group>
+
+
+  <!-- ===== 8) Optional Foxglove ===== -->
+  <group if="$(arg start_foxglove)">
+    <include file="$(find foxglove_bridge)/launch/foxglove_bridge.launch"/>
+  </group>
+
+  <!-- ===== 9) RViz ===== -->
+  <group if="$(arg start_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz"
+          args="-d $(find niryo_robot_bringup)/launch/default_one.rviz" required="false"/>
+  </group>
+</launch>

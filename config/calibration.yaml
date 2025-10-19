@@ -1,0 +1,9 @@
+calibration:
+  # sign: +1 if hardware positive matches URDF positive, else -1
+  # offset_rad: add to hardware angle (after sign) to match URDF zero
+  joint_1: {sign: +1.0, offset_rad: 0.00}
+  joint_2: {sign: -1.0, offset_rad: 0.00}
+  joint_3: {sign: +1.0, offset_rad: 0.00}
+  joint_4: {sign: +1.0, offset_rad: 0.00}
+  joint_5: {sign: -1.0, offset_rad: 0.00}
+  joint_6: {sign: +1.0, offset_rad: 0.00}

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>niryo_one_hw</name>
+  <version>0.0.1</version>
+  <description>ROS-control hardware interface to run a Niryo One on the ned_ros stack.</description>
+
+  <maintainer email="you@example.com">You</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Core deps used in headers/cpp -->
+  <depend>roscpp</depend>
+  <depend>hardware_interface</depend>
+  <depend>controller_manager</depend>
+  <depend>std_srvs</depend>
+
+  <!-- You include + link these in CMakeLists -->
+  <depend>rosparam_shortcuts</depend>
+  <depend>dynamixel_sdk</depend>
+
+  <!-- (Optional) List these if you later include their headers/interfaces
+       <depend>joint_limits_interface</depend>
+       <depend>transmission_interface</depend>
+       <depend>control_msgs</depend>
+       <depend>trajectory_msgs</depend>
+       <depend>urdf</depend>
+  -->
+
+  <export/>
+</package>

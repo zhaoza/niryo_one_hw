@@ -1,0 +1,17 @@
+<launch>
+  <!-- Load HW params + controllers under /niryo_robot -->
+  <rosparam command="load" ns="/niryo_robot"
+            file="$(find niryo_one_hw)/config/niryo_one_hw_params.yaml"/>
+  <rosparam command="load" ns="/niryo_robot"
+            file="$(find niryo_one_hw)/config/controllers.yaml"/>
+
+  <!-- Hardware node (runs under /niryo_robot) -->
+  <node pkg="niryo_one_hw" type="niryo_one_hw_node"
+        name="hardware" ns="/niryo_robot" output="screen"/>
+
+  <!-- Controller spawner (give it a name!) -->
+  <node pkg="controller_manager" type="spawner"
+        name="controller_spawner" ns="/niryo_robot"
+        args="joint_state_controller arm_controller"
+        output="screen"/>
+</launch>

@@ -1,0 +1,23 @@
+# Namespace note: the launch file loads this under /niryo_robot
+hardware:
+  loop_hz: 200.0
+
+  virtual: true         # set to false when you plug real hardware
+  joint_names: [joint_1, joint_2, joint_3, joint_4, joint_5, joint_6]
+
+  can:
+    interface: "can0"
+    # example arbitration IDs; change to your firmware
+    cmd_ids:  [0x101, 0x111, 0x121]   # base, shoulder, elbow
+    stat_ids: [0x201, 0x211, 0x221]
+    pos_scale: 1000000.0              # fixed-point → rad
+    vel_scale: 1000000.0
+
+  stepper:
+    ids: [1,2,3]
+
+  dxl:
+    port: "/dev/ttyUSB0"
+    baud: 1000000
+    ids: [4,5,6]
+
